@@ -208,13 +208,22 @@ bool RUDP::Socket::listen(uint32_t attempts)
             {
                 if (RUDP_BIT_HAS(header->m_flags, RUDP::PacketFlag_InOrder))
                 {
+                    bool wasAdded = false;
+                    
                     for (RUDP::Packet *pck = channelQueue->peek(); pck != NULL; pck = channelQueue->next(pck))
                     {
                         RUDP::Packet *nxt = channelQueue->next(pck);
                         if ((nxt == NULL || nxt->getHeader()->m_packetId > header->m_packetId) && pck->getHeader()->m_packetId < header->m_packetId)
                         {
                             channelQueue->pushAfter(pck, newPck);
+                            wasAdded = true;
+                            break;
                         }
+                    }
+                    
+                    if(!wasAdded)
+                    {
+                        channelQueue->push(newPck);
                     }
                 }
             }
