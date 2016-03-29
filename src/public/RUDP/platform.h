@@ -18,7 +18,7 @@ typedef long ssize_t;
 
 namespace RUDP
 {
-	typedef ::SOCKET SocketHandle;
+    typedef ::SOCKET SocketHandle;
 }
 
 #define RUDP_CLOSESOCKET(x) ::closesocket(x)
@@ -38,10 +38,10 @@ namespace RUDP
 
 namespace RUDP
 {
-	typedef int SocketHandle;
-
-	inline uint32_t getUnixMS()
-	{
+    typedef int SocketHandle;
+    
+    inline uint32_t getUnixMS()
+    {
         struct timeval now;
         gettimeofday(&now, NULL);
         return round((now.tv_usec * 1000) / 1.0e6); // Convert nanoseconds to milliseconds

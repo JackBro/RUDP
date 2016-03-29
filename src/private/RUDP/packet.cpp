@@ -12,24 +12,24 @@
 void RUDP::Packet::setHeader(RUDP::PacketHeader *header)
 {
     // it better be a packed struct!
-	header->m_packetId = htons(header->m_packetId);
+    header->m_packetId = htons(header->m_packetId);
     memcpy(m_buffer, header, sizeof(RUDP::PacketHeader));
-	header->m_packetId = ntohs(header->m_packetId);
+    header->m_packetId = ntohs(header->m_packetId);
 }
 
 RUDP::PacketHeader *RUDP::Packet::getHeader()
 {
-	return (PacketHeader*)m_buffer;
+    return (PacketHeader*)m_buffer;
 }
 
 sockaddr_storage *RUDP::Packet::getTargetAddr()
 {
-	return &m_targetAddr;
+    return &m_targetAddr;
 }
 
 void RUDP::Packet::setTargetAddr(sockaddr_storage *addr)
 {
-	m_targetAddr = *addr;
+    m_targetAddr = *addr;
 }
 
 void RUDP::Packet::resetReadPosition()
@@ -44,24 +44,24 @@ void RUDP::Packet::resetWritePosition()
 
 uint16_t RUDP::Packet::read(RUDP::Packet *buffer, size_t len)
 {
-    buffer->setHeader(getHeader());   
+    buffer->setHeader(getHeader());
     return read(buffer->getUserDataPtr(), len);
 }
 
 uint16_t RUDP::Packet::write(RUDP::Packet *buffer, size_t len)
 {
-	setHeader(buffer->getHeader());
+    setHeader(buffer->getHeader());
     return write(buffer->getUserDataPtr(), len);
 }
 
 void RUDP::Packet::setTimestamp(uint32_t time)
 {
-	m_timestamp = time;
+    m_timestamp = time;
 }
 
 uint32_t RUDP::Packet::getTimestamp()
 {
-	return m_timestamp;
+    return m_timestamp;
 }
 
 const char *RUDP::Packet::getDataPtr()
@@ -81,7 +81,7 @@ uint16_t RUDP::Packet::getTotalSize()
 
 uint16_t RUDP::Packet::getUserDataSize()
 {
-	return getWritePosition();
+    return getWritePosition();
 }
 
 uint16_t RUDP::Packet::getReadPosition()

@@ -30,7 +30,7 @@ namespace RUDP
     {
         EnqueueMessageResult_Success            = 1,
         EnqueueMessageResult_OutQueueFull	    = 0,
-		EnqueueMEssageResult_
+        EnqueueMEssageResult_
     };
     
     enum AckStatus : uint8_t
@@ -53,7 +53,7 @@ namespace RUDP
         sockaddr_storage m_peer;
         RUDP::ChannelId m_channel;
         
-		void prepareForSending(const char *dataToSend, size_t dataLen, uint32_t targetAddr, uint16_t targetPort, RUDP::ChannelId channel);
+        void prepareForSending(const char *dataToSend, size_t dataLen, uint32_t targetAddr, uint16_t targetPort, RUDP::ChannelId channel);
         void prepareForSending(const char *dataToSend, size_t dataLen, sockaddr_storage *target, RUDP::ChannelId channel);
         void prepareForReceiving(const char *messageBuffer, size_t bufferLen);
     };
@@ -62,47 +62,47 @@ namespace RUDP
     {
     private:
         std::atomic<RUDP::PacketId> *m_ChannelPacketIds;
-
-		RUDP::NodeStore<RUDP::Packet> m_nodeStore;
+        
+        RUDP::NodeStore<RUDP::Packet> m_nodeStore;
         RUDP::Queue<RUDP::Packet> m_outQueue;
-		RUDP::Queue<RUDP::Packet> m_ackQueue;
-
-		std::vector<RUDP::Queue<RUDP::Packet>> m_inQueueChannels;
-		RUDP::Queue<RUDP::Queue<RUDP::Packet>> m_inQueue;
-
+        RUDP::Queue<RUDP::Packet> m_ackQueue;
+        
+        std::vector<RUDP::Queue<RUDP::Packet>> m_inQueueChannels;
+        RUDP::Queue<RUDP::Queue<RUDP::Packet>> m_inQueue;
+        
         RUDP::SocketHandle m_handle;
         uint16_t m_port;
-		uint32_t m_ackTimeout;
-
+        uint32_t m_ackTimeout;
+        
         RUDP::PacketId reservePacketsOnChannel(RUDP::ChannelId channel, RUDP::PacketId numNeeded);
-		bool receivePacket(RUDP::Packet *userBuffer);
-		void enqueuePacket(RUDP::Packet *pck);
+        bool receivePacket(RUDP::Packet *userBuffer);
+        void enqueuePacket(RUDP::Packet *pck);
         bool sendPacket(RUDP::Packet *toWrite);
-
-		void enqueueAcknowledgement(RUDP::Packet *ack);
-
-		bool acknowledge();
-		bool listen(uint32_t attempts);
-		bool flush();
-
-		void setAckTimeout(uint32_t ms);
-
-		static void PrintLastSocketError(const char *context);
+        
+        void enqueueAcknowledgement(RUDP::Packet *ack);
+        
+        bool acknowledge();
+        bool listen(uint32_t attempts);
+        bool flush();
+        
+        void setAckTimeout(uint32_t ms);
+        
+        static void PrintLastSocketError(const char *context);
         
     public:
-		Socket();
+        Socket();
         ~Socket();
         
-		bool open(uint16_t port, uint32_t addr = 0);
+        bool open(uint16_t port, uint32_t addr = 0);
         bool open(sockaddr *target, socklen_t targetSize);
-		bool open(sockaddr_in *target);
-		bool open(sockaddr_in6 *target);
+        bool open(sockaddr_in *target);
+        bool open(sockaddr_in6 *target);
         
         uint16_t getPort();
         RUDP::SocketHandle getHandle();
         
-		uint32_t update(uint32_t msTimeout);
-		
+        uint32_t update(uint32_t msTimeout);
+        
         
         bool peekMessage(size_t &msgSize);
         bool receiveMessage(RUDP::Message *message);
