@@ -1,0 +1,16 @@
+﻿Build started 29/03/2016 15:57:59.
+     1>Project "C:\Users\TIM\Dropbox\RUDP\projects\vs2013\RUDPWin32\RUDPWin32.vcxproj" on node 2 (Rebuild target(s)).
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /IC:\Users\TIM\Dropbox\RUDP\projects\vs2013\..\..\src\public /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _LIB /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt ..\..\..\src\private\RUDP\packet.cpp ..\..\..\src\private\RUDP\socket.cpp
+         socket.cpp
+         packet.cpp
+         Generating Code...
+       Lib:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\Lib.exe /OUT:"C:\Users\TIM\Dropbox\RUDP\projects\vs2013\Debug\RUDPWin32.lib" /NOLOGO Debug\packet.obj
+         Debug\socket.obj
+         RUDPWin32.vcxproj -> C:\Users\TIM\Dropbox\RUDP\projects\vs2013\Debug\RUDPWin32.lib
+     1>Done Building Project "C:\Users\TIM\Dropbox\RUDP\projects\vs2013\RUDPWin32\RUDPWin32.vcxproj" (Rebuild target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:01.09
