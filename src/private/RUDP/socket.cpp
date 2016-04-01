@@ -239,13 +239,16 @@ bool RUDP::Socket::listen(uint32_t attempts)
                 {
                     if (memcmp(pck->getHeader(), header, sizeof(RUDP::PacketHeader)) == 0)
                     {
-                        pck = m_ackQueue.remove(pck);
+                        m_ackQueue.remove(pck);
+						m_nodeStore.free(pck);
+						break;
                     }
                 }
             }
         }
         else
         {
+			m_nodeStore.free(newPck);
             break;
         }
     }
@@ -253,7 +256,7 @@ bool RUDP::Socket::listen(uint32_t attempts)
     return received;
 }
 
-void RUDP::Socket::setAckTimeout(uint32_t ms)
+void RUDP::Socket::setAckTimeout(uint64_t ms)
 {
     m_ackTimeout = ms;
 }
@@ -269,9 +272,11 @@ bool RUDP::Socket::acknowledge()
             break;
         }
         
-        uint32_t time = RUDP_GETTIMEMS;
-        uint32_t pckTime = pck->getTimestamp();
-        uint32_t diff = time - pckTime;
+        uint64_t time = RUDP_GETTIMEMS;
+        uint64_t pckTime = pck->getTimestamp();
+        uint64_t diff = time - pckTime;
+        
+        //printf("check ack: %lld %lld %lld\n", time, pckTime, diff);
         
         if (diff > m_ackTimeout)
         {
@@ -284,27 +289,50 @@ bool RUDP::Socket::acknowledge()
     return sentAny;
 }
 
-uint32_t RUDP::Socket::update(uint32_t msTimeout)
+uint64_t RUDP::Socket::update(uint64_t msTimeout)
 {
-    msTimeout += RUDP_GETTIMEMS;
+    uint64_t time = RUDP_GETTIMEMS;
+    uint64_t target = msTimeout + time;
     
     do
     {
         listen(256);
         acknowledge();
         flush();
+        
+        time = RUDP_GETTIMEMS;
+        //printf("check socket: %lld %lld\n", time, target);
     }
-    while (msTimeout > RUDP_GETTIMEMS);
+    while (target > time);
     
-    return 0;
+    return time >= target? 0 : target - time;
 }
 
 bool RUDP::Socket::sendPacket(RUDP::Packet *toWrite)
 {
-    size_t toSendLen = toWrite->getTotalSize();
+	sockdataptr_t data = (sockdataptr_t)toWrite->getDataPtr();
+    size_t dataLen = toWrite->getTotalSize();
+    sockaddr *target = (sockaddr*)toWrite->getTargetAddr();
+    int targetLen = sizeof(sockaddr_storage);
     
-    size_t sentBytes = sendto(m_handle, toWrite->getDataPtr(), toSendLen, 0, (sockaddr*)toWrite->getTargetAddr(), sizeof(sockaddr_storage));
-    if(sentBytes != toSendLen)
+    ssize_t sentBytes = 0;
+    
+    switch(target->sa_family)
+    {
+        case AF_INET:
+            sentBytes = sendto(m_handle, data, dataLen, 0, target, sizeof(sockaddr_in));
+            break;
+            
+        case AF_INET6:
+            sentBytes = sendto(m_handle, data, dataLen, 0, target, sizeof(sockaddr_in6));
+            break;
+            
+        default:
+            sentBytes = sendto(m_handle, data, dataLen, 0, target, targetLen);
+            break;
+    }
+    
+    if(sentBytes != dataLen)
     {
         PrintLastSocketError("Sending Packet");
         return false;
@@ -374,7 +402,7 @@ bool RUDP::Socket::receiveMessage(RUDP::Message *message)
         }
     }
     
-    return false;
+    return ret;
 }
 
 void RUDP::Socket::enqueuePacket(RUDP::Packet *pck)
@@ -464,6 +492,7 @@ bool RUDP::Socket::receivePacket(RUDP::Packet *userBuffer)
         
         RUDP::PacketHeader *header = userBuffer->getHeader();
         
+
         printf("received packet on channel %d:%d:%d -> (%d, %d)\n\n",
                header->m_channelId,
                header->m_packetId,

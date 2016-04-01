@@ -15,6 +15,7 @@
 
 typedef int socklen_t;
 typedef long ssize_t;
+typedef char *sockdataptr_t;
 
 namespace RUDP
 {
@@ -35,16 +36,21 @@ namespace RUDP
 #include <unistd.h>
 #include <sys/time.h>
 #include <cmath>
+#include <stdio.h>
+
+typedef void *sockdataptr_t;
 
 namespace RUDP
 {
     typedef int SocketHandle;
     
-    inline uint32_t getUnixMS()
+    inline uint64_t getUnixMS()
     {
-        struct timeval now;
-        gettimeofday(&now, NULL);
-        return round((now.tv_usec * 1000) / 1.0e6); // Convert nanoseconds to milliseconds
+        struct timeval te;
+        gettimeofday(&te, NULL); // get current time
+        uint64_t milliseconds = te.tv_sec * 1000LL + te.tv_usec / 1000; // caculate milliseconds
+        //printf("milliseconds: %lld\n", milliseconds);
+        return milliseconds;
     }
 }
 

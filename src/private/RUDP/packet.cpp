@@ -54,12 +54,12 @@ uint16_t RUDP::Packet::write(RUDP::Packet *buffer, size_t len)
     return write(buffer->getUserDataPtr(), len);
 }
 
-void RUDP::Packet::setTimestamp(uint32_t time)
+void RUDP::Packet::setTimestamp(uint64_t time)
 {
     m_timestamp = time;
 }
 
-uint32_t RUDP::Packet::getTimestamp()
+uint64_t RUDP::Packet::getTimestamp()
 {
     return m_timestamp;
 }

@@ -70,9 +70,9 @@ namespace RUDP
         std::vector<RUDP::Queue<RUDP::Packet>> m_inQueueChannels;
         RUDP::Queue<RUDP::Queue<RUDP::Packet>> m_inQueue;
         
+        uint64_t m_ackTimeout;
         RUDP::SocketHandle m_handle;
         uint16_t m_port;
-        uint32_t m_ackTimeout;
         
         RUDP::PacketId reservePacketsOnChannel(RUDP::ChannelId channel, RUDP::PacketId numNeeded);
         bool receivePacket(RUDP::Packet *userBuffer);
@@ -85,7 +85,7 @@ namespace RUDP
         bool listen(uint32_t attempts);
         bool flush();
         
-        void setAckTimeout(uint32_t ms);
+        void setAckTimeout(uint64_t ms);
         
         static void PrintLastSocketError(const char *context);
         
@@ -101,8 +101,7 @@ namespace RUDP
         uint16_t getPort();
         RUDP::SocketHandle getHandle();
         
-        uint32_t update(uint32_t msTimeout);
-        
+        uint64_t update(uint64_t msTimeout);
         
         bool peekMessage(size_t &msgSize);
         bool receiveMessage(RUDP::Message *message);

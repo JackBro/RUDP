@@ -75,7 +75,7 @@ namespace RUDP
     private:
         char m_buffer[RUDP::PacketSize];
         sockaddr_storage m_targetAddr;
-        uint32_t m_timestamp;
+        uint64_t m_timestamp;
         uint16_t m_readPosition;
         uint16_t m_writePosition;
         
@@ -85,8 +85,8 @@ namespace RUDP
             memset(&m_targetAddr, 0, sizeof(m_targetAddr));
         }
         
-        void setTimestamp(uint32_t ms);
-        uint32_t getTimestamp();
+        void setTimestamp(uint64_t ms);
+        uint64_t getTimestamp();
         
         void setHeader(RUDP::PacketHeader *header);
         RUDP::PacketHeader *getHeader();
