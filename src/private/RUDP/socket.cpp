@@ -26,7 +26,7 @@ void RUDP::Socket::PrintLastSocketError(const char *context)
                       MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                       (LPTSTR)&buff, RUDP_ARRAYSIZE(buff), NULL);
         
-        printf("Error %s (%d: %.*S)\n", context, error, RUDP_ARRAYSIZE(buff), buff);
+        RUDP::Print::f("Error %s (%d: %.*S)\n", context, error, RUDP_ARRAYSIZE(buff), buff);
     }
 #else
     int error = errno;
@@ -35,46 +35,16 @@ void RUDP::Socket::PrintLastSocketError(const char *context)
     {
         char buff[256];
         RUDP_STRERROR(error, buff, RUDP_ARRAYSIZE(buff));
-        printf("Error %s (%d: %.*s)\n", context, error, (int)RUDP_ARRAYSIZE(buff), buff);
+        RUDP::Print::f("Error %s (%d: %.*s)\n", context, error, (int)RUDP_ARRAYSIZE(buff), buff);
     }
 #endif
-}
-
-void RUDP::Message::prepareForReceiving(const char *messageBuffer, size_t bufferLen)
-{
-    m_data = messageBuffer;
-    m_dataLen = bufferLen;
-}
-
-void RUDP::Message::prepareForSending(const char *dataToSend, size_t dataLen, uint32_t targetAddr, uint16_t targetPort, RUDP::ChannelId channel)
-{
-    sockaddr_storage target;
-    sockaddr_in *targetPtr = (sockaddr_in*)&target;
-    targetPtr->sin_family = AF_INET;
-    targetPtr->sin_addr.s_addr = htonl(targetAddr);
-    targetPtr->sin_port = htons(targetPort);
-    
-    prepareForSending(dataToSend, dataLen, &target, channel);
-}
-
-void RUDP::Message::prepareForSending(const char *dataToSend, size_t dataLen, sockaddr_storage *target, RUDP::ChannelId channel)
-{
-    m_data = dataToSend;
-    m_dataLen = dataLen;
-    m_channel = channel;
-    m_peer = *target;
-}
-
-RUDP::PacketId RUDP::Socket::reservePacketsOnChannel(RUDP::ChannelId channel, RUDP::PacketId numNeeded)
-{
-    return std::atomic_fetch_add(&m_ChannelPacketIds[channel], numNeeded);
 }
 
 RUDP::Socket::Socket() :
 m_ackTimeout(1000),
 m_port(0),
 m_handle(0),
-m_ChannelPacketIds(NULL)
+m_peerList(RUDP::Map<RUDP::Peer>(256))
 {
 #ifdef _WIN32
     WSADATA wsaData;
@@ -84,14 +54,10 @@ m_ChannelPacketIds(NULL)
         PrintLastSocketError("WinSock Startup");
     }
 #endif
-    
-    m_ChannelPacketIds = new std::atomic<RUDP::PacketId>[RUDP::MaxChannels];
-    m_inQueueChannels.resize(RUDP::MaxChannels);
 }
 
 RUDP::Socket::~Socket()
 {
-    delete[] m_ChannelPacketIds;
     RUDP_CLOSESOCKET(m_handle);
 }
 
@@ -144,12 +110,19 @@ bool RUDP::Socket::open(sockaddr *target, socklen_t targetSize)
             return false;
         }
     
+    memcpy(&m_address, target, targetSize > sizeof(sockaddr_storage) ? sizeof(sockaddr_storage) : targetSize);
+    
     return true;
 }
 
 RUDP::SocketHandle RUDP::Socket::getHandle()
 {
     return m_handle;
+}
+
+sockaddr_storage *RUDP::Socket::getAddress()
+{
+    return &m_address;
 }
 
 uint16_t RUDP::Socket::getPort()
@@ -160,14 +133,17 @@ uint16_t RUDP::Socket::getPort()
 bool RUDP::Socket::flush()
 {
     bool sent = false;
+    RUDP::List<RUDP::Packet> toSend = {};
+    m_outQueueLock.lock();
+    toSend.inheritFrom(&m_outQueue);
+    m_outQueueLock.unlock();
     
-    for (RUDP::Packet *packet = m_outQueue.peek(); packet != NULL; packet = m_outQueue.peek())
+    for (RUDP::Packet *packet = toSend.peek(); packet != NULL; packet = toSend.peek())
     {
         sent = true;
         if(sendPacket(packet))
         {
-            m_outQueue.pop();
-            m_nodeStore.free(packet);
+            toSend.pop();
         }
         else
         {
@@ -180,78 +156,22 @@ bool RUDP::Socket::flush()
 
 bool RUDP::Socket::listen(uint32_t attempts)
 {
-    bool received = false;
+    RUDP::List<RUDP::Packet> receivedPackets = {};
+    RUDP::Packet packet = {};
     
     for (uint32_t i = 0; i < attempts; i++)
     {
-        RUDP::Packet *newPck = m_nodeStore.secure();
-        if (!newPck)
+        if(receivePacket(&packet))
         {
-            break;
-        }
-        
-        if (receivePacket(newPck))
-        {
-            received = true;
-            
-            // look for our channel's queue
-            RUDP::PacketHeader *header = newPck->getHeader();
-            RUDP::Queue<RUDP::Packet> *channelQueue = &m_inQueueChannels[header->m_channelId];
-            
-            bool addToQueue = channelQueue->peek() == NULL;
-            
-            if (channelQueue->peek() == NULL)
-            {
-                channelQueue->push(newPck);
-            }
-            else
-            {
-                if (RUDP_BIT_HAS(header->m_flags, RUDP::PacketFlag_InOrder))
-                {
-                    bool wasAdded = false;
-                    
-                    for (RUDP::Packet *pck = channelQueue->peek(); pck != NULL; pck = channelQueue->next(pck))
-                    {
-                        RUDP::Packet *nxt = channelQueue->next(pck);
-                        if ((nxt == NULL || nxt->getHeader()->m_packetId > header->m_packetId) && pck->getHeader()->m_packetId < header->m_packetId)
-                        {
-                            channelQueue->pushAfter(pck, newPck);
-                            wasAdded = true;
-                            break;
-                        }
-                    }
-                    
-                    if(!wasAdded)
-                    {
-                        channelQueue->push(newPck);
-                    }
-                }
-            }
-            
-            if (addToQueue)
-            {
-                m_inQueue.push(channelQueue);
-            }
-            
-            if (RUDP_BIT_HAS(header->m_flags, RUDP::PacketFlag_IsAck))
-            {
-                for (RUDP::Packet *pck = m_ackQueue.peek(); pck != NULL; pck = m_ackQueue.next(pck))
-                {
-                    if (memcmp(pck->getHeader(), header, sizeof(RUDP::PacketHeader)) == 0)
-                    {
-                        m_ackQueue.remove(pck);
-						m_nodeStore.free(pck);
-						break;
-                    }
-                }
-            }
-        }
-        else
-        {
-			m_nodeStore.free(newPck);
-            break;
+            receivedPackets.push(&packet);
         }
     }
+    
+    bool received = receivedPackets.peek() != NULL;
+    
+    m_inQueueLock.lock();
+    m_inQueue.inheritFrom(&receivedPackets);
+    m_inQueueLock.unlock();
     
     return received;
 }
@@ -265,24 +185,24 @@ bool RUDP::Socket::acknowledge()
 {
     bool sentAny = false;
     
-    for (RUDP::Packet *pck = m_ackQueue.peek(); pck != NULL; pck = m_ackQueue.next(pck))
+    RUDP::List<RUDP::Packet> toSend = {};
+    m_ackQueueLock.lock();
+    toSend.inheritFrom(&m_ackQueue);
+    m_ackQueueLock.unlock();
+    
+    for (RUDP::Packet *pck = toSend.peek(); pck != NULL; pck = toSend.next(pck))
     {
-        if (!m_nodeStore.hasSpace())
-        {
-            break;
-        }
-        
-        uint64_t time = RUDP_GETTIMEMS;
+        uint64_t time = RUDP_GETTIMEMS_LOCAL();
         uint64_t pckTime = pck->getTimestamp();
         uint64_t diff = time - pckTime;
         
-        //printf("check ack: %lld %lld %lld\n", time, pckTime, diff);
+        //RUDP_PRINTF("check ack: %lld %lld %lld\n", time, pckTime, diff);
         
         if (diff > m_ackTimeout)
         {
             pck->setTimestamp(time);
             sentAny = true;
-            enqueuePacket(pck);
+            sendPacket(pck);
         }
     }
     
@@ -291,7 +211,7 @@ bool RUDP::Socket::acknowledge()
 
 uint64_t RUDP::Socket::update(uint64_t msTimeout)
 {
-    uint64_t time = RUDP_GETTIMEMS;
+    uint64_t time = RUDP_GETTIMEMS_LOCAL();
     uint64_t target = msTimeout + time;
     
     do
@@ -300,8 +220,8 @@ uint64_t RUDP::Socket::update(uint64_t msTimeout)
         acknowledge();
         flush();
         
-        time = RUDP_GETTIMEMS;
-        //printf("check socket: %lld %lld\n", time, target);
+        time = RUDP_GETTIMEMS_LOCAL();
+        //RUDP_PRINTF("check socket: %lld %lld\n", time, target);
     }
     while (target > time);
     
@@ -310,10 +230,11 @@ uint64_t RUDP::Socket::update(uint64_t msTimeout)
 
 bool RUDP::Socket::sendPacket(RUDP::Packet *toWrite)
 {
-	sockdataptr_t data = (sockdataptr_t)toWrite->getDataPtr();
+    sockdataptr_t data = (sockdataptr_t)toWrite->getDataPtr();
     size_t dataLen = toWrite->getTotalSize();
     sockaddr *target = (sockaddr*)toWrite->getTargetAddr();
-    int targetLen = sizeof(sockaddr_storage);
+    
+    toWrite->getHeader()->m_packetId = htons(toWrite->getHeader()->m_packetId);
     
     ssize_t sentBytes = 0;
     
@@ -328,9 +249,11 @@ bool RUDP::Socket::sendPacket(RUDP::Packet *toWrite)
             break;
             
         default:
-            sentBytes = sendto(m_handle, data, dataLen, 0, target, targetLen);
+            sentBytes = sendto(m_handle, data, dataLen, 0, target, sizeof(sockaddr_storage));
             break;
     }
+    
+    toWrite->getHeader()->m_packetId = ntohs(toWrite->getHeader()->m_packetId);
     
     if(sentBytes != dataLen)
     {
@@ -339,138 +262,24 @@ bool RUDP::Socket::sendPacket(RUDP::Packet *toWrite)
     }
     else
     {
-        printf("Sent packet on channel %d:%d:%d -> (%d)\n\n",
-               toWrite->getHeader()->m_channelId,
-               toWrite->getHeader()->m_packetId,
-               toWrite->getHeader()->m_flags,
-               toWrite->getUserDataSize()
-               //toWrite->getUserDataPtr(),
-               //toWrite->getUserDataSize()
-               );
+        RUDP::PacketHeader *header = toWrite->getHeader();
+        uint32_t size = toWrite->getUserDataSize();
+        
+        RUDP::ChannelId channelId = header->m_channelId;
+        RUDP::PacketId packetId = header->m_packetId;
+        RUDP::PacketFlag flags = header->m_flags;
+        
+        RUDP::Print::f("Sent packet on channel %d:%d:%d -> (%d)\n\n",
+                       channelId,
+                       packetId,
+                       flags,
+                       size
+                       //toWrite->getUserDataPtr(),
+                       //toWrite->getUserDataSize()
+                       );
         
         return true;
     }
-}
-
-bool RUDP::Socket::peekMessage(size_t &msgSize)
-{
-    RUDP::Queue<RUDP::Packet> *queue = m_inQueue.peek();
-    if (queue)
-    {
-        RUDP::Packet *msg = queue->peek();
-        
-        if (msg)
-        {
-            msgSize = msg->getUserDataSize();
-            return true;
-        }
-    }
-    
-    msgSize = 0;
-    return false;
-}
-
-bool RUDP::Socket::receiveMessage(RUDP::Message *message)
-{
-    bool ret = false;
-    RUDP::Queue<RUDP::Packet> *queue = m_inQueue.peek();
-    
-    if (queue)
-    {
-        RUDP::Packet *msg = queue->pop();
-        
-        if (msg)
-        {
-            RUDP::PacketHeader *header = msg->getHeader();
-            
-            memcpy((void*)message->m_data, msg->getUserDataPtr(), message->m_dataLen >= msg->getUserDataSize() ? msg->getUserDataSize() : message->m_dataLen);
-            message->m_peer = *msg->getTargetAddr();
-            message->m_channel = header->m_channelId;
-            
-            if (RUDP_BIT_HAS(header->m_flags, RUDP::PacketFlag_ConfirmDelivery))
-            {
-                enqueueAcknowledgement(msg);
-            }
-            
-            msg = NULL;
-            ret = true;
-        }
-        
-        if (queue->peek() == NULL)
-        {
-            m_inQueue.pop();
-        }
-    }
-    
-    return ret;
-}
-
-void RUDP::Socket::enqueuePacket(RUDP::Packet *pck)
-{
-    m_outQueue.push(pck);
-}
-
-RUDP::EnqueueMessageResult RUDP::Socket::enqueueMessage(RUDP::Message *message, RUDP::EnqueueMessageOption options)
-{
-    PacketHeader header = {};
-    header.m_channelId = message->m_channel;
-    
-    if(RUDP_BIT_HAS(options, RUDP::EnqueueMessageOption_ConfirmDelivery))
-    {
-        RUDP_BIT_SET(header.m_flags, RUDP::PacketFlag_ConfirmDelivery);
-    }
-    
-    if(RUDP_BIT_HAS(options, RUDP::EnqueueMessageOption_InOrder))
-    {
-        RUDP_BIT_SET(header.m_flags, RUDP::PacketFlag_InOrder);
-    }
-    
-    size_t spaceForMessage = RUDP::PacketSize - sizeof(PacketHeader);
-    const char *toWrite = message->m_data;
-    
-    uint16_t numPacketsNeeded = message->m_dataLen / spaceForMessage;
-    numPacketsNeeded += (message->m_dataLen % spaceForMessage) != 0;
-    
-    if(numPacketsNeeded + m_nodeStore.getNumSecured() > m_nodeStore.getNumTotal())
-    {
-        return RUDP::EnqueueMessageResult_OutQueueFull;
-    }
-    
-    RUDP::PacketId packetId = reservePacketsOnChannel(message->m_channel, numPacketsNeeded);
-    
-    for(size_t dataLeft = message->m_dataLen; dataLeft > 0; /* nada */)
-    {
-        size_t toWriteLen = dataLeft;
-        header.m_packetId = packetId++;
-        
-        if(spaceForMessage > dataLeft)
-        {
-            RUDP_BIT_SET(header.m_flags, RUDP::PacketFlag_EndOfMessage);
-        }
-        else
-        {
-            toWriteLen = spaceForMessage;
-            RUDP_BIT_UNSET(header.m_flags, RUDP::PacketFlag_EndOfMessage);
-        }
-        
-        RUDP::Packet *writeBuffer = m_nodeStore.secure();
-        writeBuffer->setWritePosition(0);
-        writeBuffer->setHeader(&header);
-        writeBuffer->write(toWrite, toWriteLen);
-        writeBuffer->setTargetAddr(&message->m_peer);
-        
-        m_outQueue.push(writeBuffer);
-        dataLeft -= toWriteLen;
-        toWrite += toWriteLen;
-    }
-    
-    return RUDP::EnqueueMessageResult_Success;
-}
-
-void RUDP::Socket::enqueueAcknowledgement(RUDP::Packet *ack)
-{
-    RUDP_BIT_SET(ack->getHeader()->m_flags, RUDP::PacketFlag_IsAck);
-    m_ackQueue.push(ack);
 }
 
 bool RUDP::Socket::receivePacket(RUDP::Packet *userBuffer)
@@ -489,31 +298,88 @@ bool RUDP::Socket::receivePacket(RUDP::Packet *userBuffer)
     {
         userBuffer->setWritePosition((uint16_t)(bytesRead - sizeof(RUDP::PacketHeader)));
         userBuffer->setTargetAddr(&sender);
+        userBuffer->getHeader()->m_packetId = ntohs(userBuffer->getHeader()->m_packetId);
         
         RUDP::PacketHeader *header = userBuffer->getHeader();
         
-
-        printf("received packet on channel %d:%d:%d -> (%d, %d)\n\n",
-               header->m_channelId,
-               header->m_packetId,
-               header->m_flags,
-               //(int)userBuffer->getUserDataSize(), userBuffer->getUserDataPtr(), 
-               (int)userBuffer->getUserDataSize(),
-               (int)bytesRead);
+        RUDP::Print::f("received packet on channel %d:%d:%d -> (%d, %d)\n\n",
+                       header->m_channelId,
+                       header->m_packetId,
+                       header->m_flags,
+                       //(int)userBuffer->getUserDataSize(), userBuffer->getUserDataPtr(),
+                       (int)userBuffer->getUserDataSize(),
+                       (int)bytesRead);
         
         /*
-         printf("flags:\n");
+         RUDP_PRINTF("flags:\n");
          
          for(uint8_t i = 0; i < 8; i++)
          {
          if (RUDP_BIT_HAS(header->m_flags, 1 << i))
          {
-         printf("%d %s\n", i, RUDP::PacketFlag_ToString((RUDP::PacketFlag)(1 << i)));
+         RUDP_PRINTF("%d %s\n", i, RUDP::PacketFlag_ToString((RUDP::PacketFlag)(1 << i)));
          }
          }
          
-         printf("\n");*/
+         RUDP_PRINTF("\n");*/
     }
     
     return bytesRead > 0;
+}
+
+void RUDP::Socket::updatePeers()
+{
+    RUDP::List<RUDP::Packet> packetsToSort = {};
+    
+    m_inQueueLock.lock();
+    packetsToSort.inheritFrom(&m_inQueue);
+    m_inQueueLock.unlock();
+    
+    for (RUDP::Packet *packet = packetsToSort.peek(); packet != NULL; packet = packetsToSort.peek())
+    {
+        RUDP::Peer *peer = getPeer(packet->getTargetAddr());
+        if (peer)
+        {
+            peer->enqueueIncomingPacket(packet);
+        }
+        
+        packetsToSort.pop();
+    }
+}
+
+RUDP::Peer *RUDP::Socket::getPeer(uint32_t ipv4, uint16_t port)
+{
+    sockaddr_storage addr = {};
+    sockaddr_in *targetAddr = (sockaddr_in*)&addr;
+    targetAddr->sin_family = AF_INET;
+    targetAddr->sin_port = htons(port);
+    targetAddr->sin_addr.s_addr = htonl(ipv4);
+    
+    return getPeer(&addr);
+}
+
+RUDP::Peer *RUDP::Socket::getPeer(sockaddr_storage *addr)
+{
+    RUDP::Peer key(this, addr);
+    RUDP::Peer *result = m_peerList.find(&key);
+    if (!result)
+    {
+        result = m_peerList.insert(&key);
+    }
+    
+    return result;
+}
+
+void RUDP::Socket::enqueueAcknowledgments(RUDP::List<RUDP::Packet> *list)
+{
+    m_ackQueueLock.lock();
+    m_ackQueue.inheritFrom(list);
+    m_ackQueueLock.unlock();
+}
+
+void RUDP::Socket::enqueueOutgoingPackets(RUDP::List<RUDP::Packet> *list)
+{
+    m_outQueueLock.lock();
+    m_outQueue.inheritFrom(list);
+    m_outQueueLock.unlock();
 }

@@ -20,18 +20,17 @@ namespace RUDP
     typedef uint8_t ChannelId;
     typedef uint16_t PacketId;
     
-    const size_t PacketSize = 1400;
+    const size_t PacketSize = 512;
     const size_t MaxChannels = UINT8_MAX;
     
     enum PacketFlag : uint8_t
     {
         PacketFlag_None            = 0,
-        PacketFlag_ConfirmDelivery = 1,        // Will send X number of times at intervals of Y ms, until target sends ack or limit X is reached
-        PacketFlag_IsAck           = 1 << 2,   // This packet is an acknowledgement of delivery - besides this bit, the header will match perfectly but not include message contents
-        PacketFlag_InOrder         = 1 << 3,   // This packet cannot be accessed by the application until the prior packet on this channel has been processed or assumed lost
-        PacketFlag_EndOfMessage    = 1 << 4    // Indicates that this is the end of the message - if unset, this is part of a fragmented message and should be reassembled with neighbouring packets
-                                                // - If any of the packets are presumed lost, the entire message is discarded.
-                                                // - If ack is missing on one packet, only that packet is resent
+        PacketFlag_ConfirmDelivery = 1,
+        PacketFlag_IsAck           = 1 << 2,
+        PacketFlag_InOrder         = 1 << 3,
+        PacketFlag_EndOfMessage    = 1 << 4,
+        PacketFlag_StartOfMessage  = 1 << 5
     };
     
     inline const char *PacketFlag_ToString(PacketFlag flag)
@@ -42,6 +41,7 @@ namespace RUDP
                 RUDP_STRINGIFY_CASE(PacketFlag_IsAck);
                 RUDP_STRINGIFY_CASE(PacketFlag_ConfirmDelivery);
                 RUDP_STRINGIFY_CASE(PacketFlag_EndOfMessage);
+                RUDP_STRINGIFY_CASE(PacketFlag_StartOfMessage);
                 RUDP_STRINGIFY_CASE(PacketFlag_InOrder);
         }
         
@@ -63,11 +63,12 @@ namespace RUDP
         return (PacketFlag)(~((uint8_t)a));
     }
     
-    RUDP_PACKEDSTRUCT(struct PacketHeader
+    RUDP_PACKEDSTRUCT(
+                      struct PacketHeader
                       {
                           RUDP::PacketId m_packetId;
                           RUDP::ChannelId m_channelId;
-                          PacketFlag m_flags;
+                          RUDP::PacketFlag m_flags;
                       });
     
     class Packet
@@ -143,6 +144,15 @@ namespace RUDP
         uint16_t getWritePosition();
         bool setWritePosition(uint16_t len);
         bool setReadPosition(uint16_t len);
+    };
+    
+    struct MessageStart
+    {
+        RUDP::Packet *m_first;
+        RUDP::Packet *m_last;
+        bool m_isAvailable;
+        
+        MessageStart() : m_first(NULL), m_last(NULL), m_isAvailable(false) {}
     };
 }
 

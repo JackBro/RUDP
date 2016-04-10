@@ -12,9 +12,7 @@
 void RUDP::Packet::setHeader(RUDP::PacketHeader *header)
 {
     // it better be a packed struct!
-    header->m_packetId = htons(header->m_packetId);
     memcpy(m_buffer, header, sizeof(RUDP::PacketHeader));
-    header->m_packetId = ntohs(header->m_packetId);
 }
 
 RUDP::PacketHeader *RUDP::Packet::getHeader()

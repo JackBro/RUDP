@@ -77,15 +77,22 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\src\public\RUDP\channel.h" />
+    <ClInclude Include="..\..\..\src\public\RUDP\map.h" />
+    <ClInclude Include="..\..\..\src\public\RUDP\nodestore.h" />
     <ClInclude Include="..\..\..\src\public\RUDP\packet.h" />
+    <ClInclude Include="..\..\..\src\public\RUDP\peer.h" />
     <ClInclude Include="..\..\..\src\public\RUDP\platform.h" />
-    <ClInclude Include="..\..\..\src\public\RUDP\queue.h" />
+    <ClInclude Include="..\..\..\src\public\RUDP\list.h" />
     <ClInclude Include="..\..\..\src\public\RUDP\RUDP.h" />
     <ClInclude Include="..\..\..\src\public\RUDP\socket.h" />
     <ClInclude Include="..\..\..\src\public\RUDP\util.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\src\private\RUDP\channel.cpp" />
     <ClCompile Include="..\..\..\src\private\RUDP\packet.cpp" />
+    <ClCompile Include="..\..\..\src\private\RUDP\peer.cpp" />
+    <ClCompile Include="..\..\..\src\private\RUDP\RUDP.cpp" />
     <ClCompile Include="..\..\..\src\private\RUDP\socket.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

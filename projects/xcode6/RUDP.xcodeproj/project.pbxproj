@@ -13,10 +13,17 @@
 		2AD4E65C1CAAC857002CF7AB /* socket.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2AD4E65A1CAAC857002CF7AB /* socket.cpp */; };
 		2AD4E6641CAAC860002CF7AB /* packet.h in Headers */ = {isa = PBXBuildFile; fileRef = 2AD4E65E1CAAC860002CF7AB /* packet.h */; };
 		2AD4E6651CAAC860002CF7AB /* platform.h in Headers */ = {isa = PBXBuildFile; fileRef = 2AD4E65F1CAAC860002CF7AB /* platform.h */; };
-		2AD4E6661CAAC860002CF7AB /* queue.h in Headers */ = {isa = PBXBuildFile; fileRef = 2AD4E6601CAAC860002CF7AB /* queue.h */; };
 		2AD4E6671CAAC860002CF7AB /* RUDP.h in Headers */ = {isa = PBXBuildFile; fileRef = 2AD4E6611CAAC860002CF7AB /* RUDP.h */; };
 		2AD4E6681CAAC860002CF7AB /* socket.h in Headers */ = {isa = PBXBuildFile; fileRef = 2AD4E6621CAAC860002CF7AB /* socket.h */; };
 		2AD4E6691CAAC860002CF7AB /* util.h in Headers */ = {isa = PBXBuildFile; fileRef = 2AD4E6631CAAC860002CF7AB /* util.h */; };
+		2AD4E6711CBAD9D8002CF7AB /* channel.h in Headers */ = {isa = PBXBuildFile; fileRef = 2AD4E66C1CBAD9D8002CF7AB /* channel.h */; };
+		2AD4E6721CBAD9D8002CF7AB /* list.h in Headers */ = {isa = PBXBuildFile; fileRef = 2AD4E66D1CBAD9D8002CF7AB /* list.h */; };
+		2AD4E6731CBAD9D8002CF7AB /* map.h in Headers */ = {isa = PBXBuildFile; fileRef = 2AD4E66E1CBAD9D8002CF7AB /* map.h */; };
+		2AD4E6741CBAD9D8002CF7AB /* nodestore.h in Headers */ = {isa = PBXBuildFile; fileRef = 2AD4E66F1CBAD9D8002CF7AB /* nodestore.h */; };
+		2AD4E6751CBAD9D8002CF7AB /* peer.h in Headers */ = {isa = PBXBuildFile; fileRef = 2AD4E6701CBAD9D8002CF7AB /* peer.h */; };
+		2AD4E6791CBAD9E2002CF7AB /* channel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2AD4E6761CBAD9E2002CF7AB /* channel.cpp */; };
+		2AD4E67A1CBAD9E2002CF7AB /* peer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2AD4E6771CBAD9E2002CF7AB /* peer.cpp */; };
+		2AD4E67B1CBAD9E2002CF7AB /* RUDP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2AD4E6781CBAD9E2002CF7AB /* RUDP.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -49,10 +56,17 @@
 		2AD4E65A1CAAC857002CF7AB /* socket.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = socket.cpp; sourceTree = "<group>"; };
 		2AD4E65E1CAAC860002CF7AB /* packet.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = packet.h; sourceTree = "<group>"; };
 		2AD4E65F1CAAC860002CF7AB /* platform.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = platform.h; sourceTree = "<group>"; };
-		2AD4E6601CAAC860002CF7AB /* queue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = queue.h; sourceTree = "<group>"; };
 		2AD4E6611CAAC860002CF7AB /* RUDP.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RUDP.h; sourceTree = "<group>"; };
 		2AD4E6621CAAC860002CF7AB /* socket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = socket.h; sourceTree = "<group>"; };
 		2AD4E6631CAAC860002CF7AB /* util.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = util.h; sourceTree = "<group>"; };
+		2AD4E66C1CBAD9D8002CF7AB /* channel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = channel.h; sourceTree = "<group>"; };
+		2AD4E66D1CBAD9D8002CF7AB /* list.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = list.h; sourceTree = "<group>"; };
+		2AD4E66E1CBAD9D8002CF7AB /* map.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = map.h; sourceTree = "<group>"; };
+		2AD4E66F1CBAD9D8002CF7AB /* nodestore.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nodestore.h; sourceTree = "<group>"; };
+		2AD4E6701CBAD9D8002CF7AB /* peer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = peer.h; sourceTree = "<group>"; };
+		2AD4E6761CBAD9E2002CF7AB /* channel.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = channel.cpp; sourceTree = "<group>"; };
+		2AD4E6771CBAD9E2002CF7AB /* peer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = peer.cpp; sourceTree = "<group>"; };
+		2AD4E6781CBAD9E2002CF7AB /* RUDP.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RUDP.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -112,6 +126,9 @@
 		2AD4E6581CAAC857002CF7AB /* RUDP */ = {
 			isa = PBXGroup;
 			children = (
+				2AD4E6761CBAD9E2002CF7AB /* channel.cpp */,
+				2AD4E6771CBAD9E2002CF7AB /* peer.cpp */,
+				2AD4E6781CBAD9E2002CF7AB /* RUDP.cpp */,
 				2AD4E6591CAAC857002CF7AB /* packet.cpp */,
 				2AD4E65A1CAAC857002CF7AB /* socket.cpp */,
 			);
@@ -121,9 +138,13 @@
 		2AD4E65D1CAAC860002CF7AB /* RUDP */ = {
 			isa = PBXGroup;
 			children = (
+				2AD4E66C1CBAD9D8002CF7AB /* channel.h */,
+				2AD4E66D1CBAD9D8002CF7AB /* list.h */,
+				2AD4E66E1CBAD9D8002CF7AB /* map.h */,
+				2AD4E66F1CBAD9D8002CF7AB /* nodestore.h */,
+				2AD4E6701CBAD9D8002CF7AB /* peer.h */,
 				2AD4E65E1CAAC860002CF7AB /* packet.h */,
 				2AD4E65F1CAAC860002CF7AB /* platform.h */,
-				2AD4E6601CAAC860002CF7AB /* queue.h */,
 				2AD4E6611CAAC860002CF7AB /* RUDP.h */,
 				2AD4E6621CAAC860002CF7AB /* socket.h */,
 				2AD4E6631CAAC860002CF7AB /* util.h */,
@@ -156,11 +177,15 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2AD4E6751CBAD9D8002CF7AB /* peer.h in Headers */,
+				2AD4E6721CBAD9D8002CF7AB /* list.h in Headers */,
+				2AD4E6731CBAD9D8002CF7AB /* map.h in Headers */,
+				2AD4E6711CBAD9D8002CF7AB /* channel.h in Headers */,
 				2AD4E6691CAAC860002CF7AB /* util.h in Headers */,
-				2AD4E6661CAAC860002CF7AB /* queue.h in Headers */,
 				2AD4E6641CAAC860002CF7AB /* packet.h in Headers */,
 				2AD4E6651CAAC860002CF7AB /* platform.h in Headers */,
 				2AD4E6671CAAC860002CF7AB /* RUDP.h in Headers */,
+				2AD4E6741CBAD9D8002CF7AB /* nodestore.h in Headers */,
 				2AD4E6681CAAC860002CF7AB /* socket.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -243,8 +268,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2AD4E6791CBAD9E2002CF7AB /* channel.cpp in Sources */,
+				2AD4E67A1CBAD9E2002CF7AB /* peer.cpp in Sources */,
 				2AD4E65C1CAAC857002CF7AB /* socket.cpp in Sources */,
 				2AD4E65B1CAAC857002CF7AB /* packet.cpp in Sources */,
+				2AD4E67B1CBAD9E2002CF7AB /* RUDP.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -28,7 +28,9 @@ namespace RUDP
 
 #define RUDP_PACKEDSTRUCT(x) __pragma( pack(push, 1) ) x __pragma( pack(pop) )
 
-#define RUDP_GETTIMEMS ::timeGetTime()
+#define RUDP_GETTIMEMS_LOCAL ::timeGetTime
+
+#define RUDP_THREADLOCAL thread_local
 
 #else
 #include <netinet/in.h>
@@ -49,7 +51,7 @@ namespace RUDP
         struct timeval te;
         gettimeofday(&te, NULL); // get current time
         uint64_t milliseconds = te.tv_sec * 1000LL + te.tv_usec / 1000; // caculate milliseconds
-        //printf("milliseconds: %lld\n", milliseconds);
+        //RUDP_PRINTF("milliseconds: %lld\n", milliseconds);
         return milliseconds;
     }
 }
@@ -60,7 +62,9 @@ namespace RUDP
 
 #define RUDP_PACKEDSTRUCT(x) x __attribute__((__packed__))
 
-#define RUDP_GETTIMEMS RUDP::getUnixMS()
+#define RUDP_GETTIMEMS_LOCAL RUDP::getUnixMS
+
+#define RUDP_THREADLOCAL __thread
 
 #endif
 

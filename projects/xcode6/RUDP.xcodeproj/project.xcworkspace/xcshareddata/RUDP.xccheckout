@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDESourceControlProjectFavoriteDictionaryKey</key>
+	<false/>
+	<key>IDESourceControlProjectIdentifier</key>
+	<string>E6476480-E870-4EE2-9983-9C9115F6F3FC</string>
+	<key>IDESourceControlProjectName</key>
+	<string>RUDP</string>
+	<key>IDESourceControlProjectOriginsDictionary</key>
+	<dict>
+		<key>F47E13069415C91B49C617A3494C25EF6617E867</key>
+		<string>https://github.com/tdsmale/RUDP.git</string>
+	</dict>
+	<key>IDESourceControlProjectPath</key>
+	<string>projects/xcode6/RUDP.xcodeproj</string>
+	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
+	<dict>
+		<key>F47E13069415C91B49C617A3494C25EF6617E867</key>
+		<string>../../../..</string>
+	</dict>
+	<key>IDESourceControlProjectURL</key>
+	<string>https://github.com/tdsmale/RUDP.git</string>
+	<key>IDESourceControlProjectVersion</key>
+	<integer>111</integer>
+	<key>IDESourceControlProjectWCCIdentifier</key>
+	<string>F47E13069415C91B49C617A3494C25EF6617E867</string>
+	<key>IDESourceControlProjectWCConfigurations</key>
+	<array>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>F47E13069415C91B49C617A3494C25EF6617E867</string>
+			<key>IDESourceControlWCCName</key>
+			<string>RUDP</string>
+		</dict>
+	</array>
+</dict>
+</plist>
